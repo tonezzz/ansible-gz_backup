@@ -1,0 +1,36 @@
+---
+
+#args:
+#  type: #db - Backup a database
+#  type: #dir - Backup a directory
+#  type: #sub - backup each sub directories into separate files
+
+#  dst_file: #No extension
+#  exc: _*/\* wp-content/\*
+#  zip_args: #-FS, -s 50m
+#- debug: msg="{{args}}"
+
+- name: BAK_DB {{args.bak_args.name}}
+  when: args.bak_args.type=="db"
+  vars:
+    my_args:
+      zip_args: "{{args.zip_args}}"
+      db_name: "{{args.bak_args.db_name}}"
+      db_user: "{{args.bak_args.db_user}}"
+      db_pass: "{{args.bak_args.db_pass}}"
+      #dst_file: "{{args.dst_root}}/{{args.bak_args.name}}"
+      dst_root: "{{args.dst_root}}"
+      dst_file: "{{args.bak_args.name}}"
+  #  cmd: >
+  #    cd {{my_args.dst_root}} ;
+  #    rm -f {{my_args.dst_file}}.z* ;
+  #    mysqldump -p{{my_args.db_pass}} -u{{my_args.db_user}} {{my_args.db_name}} > {{my_args.dst_file}}.sql ;
+  #    zip -rm {{my_args.zip_args}} {{my_args.dst_file}}.zip {{my_args.dst_file}}.sql
+  #shell: "{{cmd}}"
+  mysql_db:
+    state: dump
+    name: "{{my_args.db_name}}"
+    login_user: "{{my_args.db_user}}"
+    login_password: "{{my_args.db_pass}}"
+    target: "{{args.dst_root}}/{{my_args.dst_file}}.gz"
+  #debug: msg="{{args.dst_root}}{{my_args.dst_file}}.sql"

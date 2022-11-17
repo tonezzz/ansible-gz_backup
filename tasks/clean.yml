@@ -1,0 +1,31 @@
+---
+
+#Clean up sub folders, keep latest n
+
+#Set owner & mode to back_set.dst_sec
+- name: Set owner & attr
+  vars:
+    cmd: >
+      chown -R {{bak_set.dst_sec.owner}}:{{bak_set.dst_sec.group}} {{backup.dst}} ;
+      chmod -R {{bak_set.dst_sec.mode}} {{backup.dst}} ;
+  shell: "{{cmd}}"
+
+- find:
+    paths: "{{clean_set.path}}"
+    patterns: "{{clean_set.patterns}}"
+    file_type: directory
+  register: result
+- name: Clean up
+  vars:
+    res: "{{ result.files | map(attribute='path') | sort(reverse=True) | list }}" #Sort it ascending
+    my_files: "{{ res[clean_set.keep | int : ] }}"
+  #debug: msg={{res}}
+  ansible.builtin.file: path="{{item}}" state=absent
+  loop: "{{my_files}}"
+
+#  set_fact:
+#    my_files: "{{ res[clean_set.keep | int : ] }}"
+#- debug: msg={{my_files}}
+#- name: Del
+#  ansible.builtin.file: path="{{item}}" state=absent
+#  loop: "{{my_files}}"

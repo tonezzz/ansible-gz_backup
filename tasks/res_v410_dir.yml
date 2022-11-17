@@ -1,0 +1,38 @@
+---
+
+- debug: var=opts_res_item
+#- meta: end_play
+
+- name: RES_DIR
+  vars:
+    file_name: "{{opts_res_item.src_name}}.zip"
+    src_file: "{{opts_res_item.src_path}}{{file_name}}"
+    dst_path: "{{opts_res_item.dst_path}}"
+    tmp_path: "{{opts_res_item.tmp_path}}"
+  block:
+  ####
+  - name: Upload {{opts_res_item.tmp_path}} < {{opts_res_item.src_path}}{{opts_res_item.src_name}}.zip
+    when: opts_res_item.upload
+    copy:
+      src:  "{{src_file}}"
+      dest: "{{tmp_path}}"
+  ####
+  - name: Create dir {{opts_res_item.dst_path}}{{opts_res_item.sub_path}}/
+    block:
+    - name: If {{opts_res_item.dst_path}}{{opts_res_item.sub_path}}/ exists?
+      stat:
+        path: "{{opts_res_item.dst_path}}{{opts_res_item.sub_path}}"
+      register: output
+    - name: Create {{opts_res_item.dst_path}}{{opts_res_item.sub_path}}/
+      when: not output.stat.exists
+      ansible.builtin.file:
+        path: "{{opts_res_item.dst_path}}{{opts_res_item.sub_path}}"
+        state: directory
+  ####
+  - name: Unzip {{opts_res_item.tmp_path}}{{opts_res_item.src_name}}.zip
+    unarchive:
+      src: "{{tmp_path}}{{file_name}}"
+      dest: "{{opts_res_item.dst_path}}{{opts_res_item.sub_path}}"
+      #creates: "{{opts_res_item.dst_path}}{{opts_res_item.sub_path}}"
+      exclude: "{{opts_res_item.exclude | default(omit)}}"
+      remote_src: yes

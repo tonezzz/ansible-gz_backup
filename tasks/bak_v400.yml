@@ -1,0 +1,31 @@
+---
+
+- debug: var=backup
+- meta: end_play
+
+- name: Prepare dir
+  block:
+  - {name: Create dir ,file: "path={{bak_dst}} state=directory group={{bak_set.dst_sec.group | default(omit)}} owner={{bak_set.dst_sec.owner | default(omit)}} mode={{bak_set.dst_sec.mode | default(omit)}}" }
+
+- name: Backup
+  when: bak_set.active==true
+  with_items: "{{ bak_set.backup_items | list }}"
+  vars:                           #bak_dev01_nspwww_v300
+    args:
+      src_root: "{{bak_set.src_root}}"
+      dst_root: "{{bak_dst}}"
+      zip_args: "{{bak_set.zip_args}}"
+      bak_args: "{{item}}"
+  #debug: msg={{task_file}}
+  include_tasks: bak_v300_{{item.type}}.yml       #import_tasks cannot be used with loops
+    
+- name: Clean
+  when: bak_set.keep is defined
+  vars:
+    clean_set:
+      path: "{{backup.dst}}"
+      patterns: "{{backup.name}}_*"
+      #keep: "{{bak_set.keep}}"
+      keep: "{{backup.keep}}"
+  #debug: var=bak_set
+  include_tasks: clean.yml

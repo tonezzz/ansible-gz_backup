@@ -1,0 +1,44 @@
+---
+
+#res_name
+- name: Check
+  tags: [check, gz_backup_check]
+  vars:
+    var_check:
+      gz_backup_config: "{{ gz_backup_config | default('undefined') }}"
+      #args: "{{ args | default('undefined') }}"
+      opts: "{{ opts | default('undefined') }}"
+  block:
+  - debug: var=var_check
+
+- meta: end_play
+
+- name: Backups
+  tags: [backups_bak]
+  when: opts.backups is defined
+  loop: "{{opts.backups}}"
+  loop_control: {loop_var: backup} #Used in included task
+  vars:
+    bak_set: "{{backup.set}}"
+    bak_set_name: "{{backup.name}}_{{ansible_date_time.iso8601 | replace(':','')}}"
+    bak_dst: "{{backup.dst}}{{bak_set_name}}"
+  #debug: var=bak_set
+  #debug: msg=["{{bak_set_name}}","{{bak_dst}}","{{bak_set}}"]
+  include_tasks: bak_v400.yml
+
+- name: Restore
+  tags: [backup_res]
+  when: (opts.restores is defined)
+  loop: "{{opts.restores}}"
+  loop_control: {loop_var: restore} #Used in included task
+  vars:
+    src_root: "{{restore.src_root}}/{{restore.res_set}}"        #Root dir
+  #debug: var=restore
+  include_tasks: res_v400.yml
+
+#Clean up sub folders, keep latest n
+- name: Clean
+  when: args.clean is defined
+  loop: "{{args.clean}}"
+  loop_control: {loop_var: clean_set}
+  include_tasks: clean.yml

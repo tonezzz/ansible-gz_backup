@@ -1,0 +1,50 @@
+---
+
+#args:
+#  type: #db - Backup a database
+#  type: #dir - Backup a directory
+#  type: #sub - backup each sub directories into separate files
+
+#  dst_file: #No extension
+#  exc: _*/\* wp-content/\*
+#  zip_args: #-FS, -s 50m
+#- debug: msg="{{args}}"
+
+- debug: var=opts_bak_item
+#- meta: end_play
+
+- name: BAK_SUB (Prepare) {{opts_bak_item.bak_args.name}}
+  when: opts_bak_item.bak_args.type=="sub"
+  vars:
+    my_args:
+      path: "{{opts_bak_item.src_root}}/{{opts_bak_item.bak_args.path}}"
+      patterns: "{{opts_bak_item.bak_args.patterns}}"
+      file_type: "{{opts_bak_item.bak_args.file_type}}"
+      recurse: "{{opts_bak_item.bak_args.recurse}}"
+  #debug: msg="{{my_args}}"
+  find:
+    paths: "{{my_args.path}}"
+    patterns: "{{my_args.patterns}}"
+    file_type: "{{my_args.file_type}}"
+    recurse: "{{my_args.recurse}}"
+  register: rs
+#- debug: msg="{{rs}}"
+- name: BAK_SUB (Backup) {{opts_bak_item.bak_args.name}}  #bak_dev01_nspwww exc
+  when: opts_bak_item.bak_args.type=="sub"
+  with_items: "{{ rs.files | map(attribute='path') | list }}"
+  loop_control: {loop_var: bak_item}
+  vars:
+    sub_name: "{{bak_item | basename}}"
+    my_args:
+      src_dir: "{{opts_bak_item.src_root}}/{{opts_bak_item.bak_args.path}}"   #src_dir now include item path
+      src_item: "{{sub_name}}"
+      dst_file: "{{opts_bak_item.dst_root}}/{{opts_bak_item.bak_args.name}}_{{sub_name}}"
+      zip_args: "{{opts_bak_item.zip_args}}"
+      exc: "{%for item in opts_bak_item.bak_args.exc%} -x'!{{item}}'{%endfor%} "
+    #  rm -f {{my_args.dst_file}}.z* ;
+    #  7z a {{my_args.dst_file}}.zip {{my_args.src_item}} {{my_args.exc}}
+    cmd: >
+      cd {{my_args.src_dir}} ;
+      7z a {{my_args.dst_file}}.zip {{my_args.src_item}} {{my_args.exc}}
+  #debug: var=my_args
+  shell: "{{cmd}}"

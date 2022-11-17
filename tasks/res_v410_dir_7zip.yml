@@ -1,0 +1,52 @@
+---
+
+- debug: var=opts_res_item
+#- meta: end_play
+
+- name: RES_DIR with 7-Zip
+  vars:
+    file_name: "{{opts_res_item.src_name}}.zip"
+    src_file: "{{opts_res_item.src_path}}{{file_name}}"
+    dst_path: "{{opts_res_item.dst_path}}"
+    tmp_path: "{{opts_res_item.tmp_path}}"
+  block:
+  ####
+  - name: Upload {{opts_res_item.tmp_path}} < {{opts_res_item.src_path}}{{opts_res_item.src_name}}.zip
+    when: opts_res_item.upload
+    copy:
+      src:  "{{src_file}}"
+      dest: "{{tmp_path}}"
+  ####
+  - name: Unzip {{opts_res_item.tmp_path}}{{opts_res_item.src_name}}.zip
+    block:
+    - name: Extract files
+      vars:
+        exclude: "{%for item in opts_res_item.exclude%} -x'!{{item}}'{%endfor%} "
+        options: ''
+        cmd: >
+          7z x {{opts_res_item.zip_opts|default('')}} {{tmp_path}}{{file_name}} -o{{opts_res_item.dst_path}}{{opts_res_item.sub_path}} {{exclude}}
+      shell: "{{cmd}}"
+    #- name: Set permissions
+    #  file: dest="{{my_args.dst_dir}}" owner="{{args.dst_sec.owner}}" group="{{args.dst_sec.group}}" mode="{{args.dst_sec.mode}}" recurse=yes
+
+########################################### rs_dev00_nspwww_test
+- name: RES_DIR
+  tags: never
+  when: args.res_args.type=="dir"
+  vars:
+    my_args:
+      src_dir: "{{args.src_root}}"
+      #src_file: "{{args.src_root}}"
+      dst_dir: "{{args.dst_root}}/{{args.res_args.path}}/"      #sub path is already included
+      options: "{{args.res_args.opts}}"
+      exc: "{%for item in args.res_args.exc%} -x'!{{item}}'{%endfor%} "
+    cmd: >
+      7z x {{my_args.options}} {{my_args.src_dir}}/{{args.res_args.name}}.zip -o{{my_args.dst_dir}} {{my_args.exc}}
+  block:
+    - debug: var=my_args
+    - debug: var=cmd
+    - name: Extract files {{args.res_args.name}}.zip
+      shell: "{{cmd}}"
+    #- debug: msg=[{{args}},{{args.res_args}}]
+    - name: Set permissions
+      file: dest="{{my_args.dst_dir}}" owner="{{args.dst_sec.owner}}" group="{{args.dst_sec.group}}" mode="{{args.dst_sec.mode}}" recurse=yes

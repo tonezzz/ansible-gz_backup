@@ -1,0 +1,22 @@
+---
+
+#args:
+#  type: #db - Backup a database
+#  type: #dir - Backup a directory
+#  type: #sub - backup each sub directories into separate files
+
+#  dst_file: #No extension
+#  exc: _*/\* wp-content/\*
+#  zip_args: #-FS, -s 50m
+#- debug: msg="{{args}}"
+- debug: var=opts_bak_item
+- name: BAK_DB {{opts_bak_item.bak_args.db_name}}
+  when: opts_bak_item.bak_args.type=="db"
+  mysql_db:
+    state: dump
+    name: "{{opts_bak_item.bak_args.db_name}}"
+    target: "{{opts_bak_item.dst_root}}{{opts_bak_item.bak_args.name}}.gz"
+    login_user:         "{{opts_bak_item.bak_args.db_user           | default(omit) }}"
+    login_unix_socket:  "{{opts_bak_item.bak_args.login_unix_socket | default(omit) }}"
+    login_password:     "{{opts_bak_item.bak_args.db_pass           | default(omit) }}"
+  #debug: msg="{{opts_bak_item.dst_root}}{{my_args.dst_file}}.sql"

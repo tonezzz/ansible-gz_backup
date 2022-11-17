@@ -1,0 +1,34 @@
+---
+
+#args:
+#  type: #db - Backup a database
+#  type: #dir - Backup a directory
+#  type: #sub - backup each sub directories into separate files
+
+#  dst_file: #No extension
+#  exc: _*/\* wp-content/\*
+#  zip_args: #-FS, -s 50m
+#- debug: msg="{{args}}"
+
+- debug: var=args
+
+########################################### rs_dev00_nspwww_test
+- name: RES_DIR
+  when: args.res_args.type=="dir"
+  vars:
+    my_args:
+      src_dir: "{{args.src_root}}"
+      #src_file: "{{args.src_root}}"
+      dst_dir: "{{args.dst_root}}/{{args.res_args.path}}/"      #sub path is already included
+      options: "{{args.res_args.opts}}"
+      exc: "{%for item in args.res_args.exc%} -x'!{{item}}'{%endfor%} "
+    cmd: >
+      7z x {{my_args.options}} {{my_args.src_dir}}/{{args.res_args.name}}.zip -o{{my_args.dst_dir}} {{my_args.exc}}
+  block:
+    - debug: var=my_args
+    - debug: var=cmd
+    - name: Extract files {{args.res_args.name}}.zip
+      shell: "{{cmd}}"
+    #- debug: msg=[{{args}},{{args.res_args}}]
+    - name: Set permissions
+      file: dest="{{my_args.dst_dir}}" owner="{{args.dst_sec.owner}}" group="{{args.dst_sec.group}}" mode="{{args.dst_sec.mode}}" recurse=yes

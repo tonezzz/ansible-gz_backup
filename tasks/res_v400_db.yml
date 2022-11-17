@@ -1,0 +1,31 @@
+---
+
+#args:
+#  type: #db - Backup a database
+#  type: #dir - Backup a directory
+#  type: #sub - backup each sub directories into separate files
+
+#  dst_file: #No extension
+#  exc: _*/\* wp-content/\*
+#  zip_args: #-FS, -s 50m
+#- debug: msg="{{args}}"
+
+- name: RES_DB
+  when: args.res_args.type=="db"
+  vars:
+    my_args:
+      db_name: "{{args.res_args.db_name}}"
+      db_user: "{{args.res_args.db_user}}"
+      db_pass: "{{args.res_args.db_pass}}"
+      src_file: "{{args.src_root}}/{{args.res_args.name}}.gz"
+  #  cmd: >
+  #    cd {{args.src_root}} ;
+  #    mysql --binary-mode=1 -u{{my_args.db_user}} -p{{my_args.db_pass}} {{my_args.db_name}} < {{my_args.src_file}}
+  #shell: "{{cmd}}"
+  mysql_db:
+    name: "{{my_args.db_name}}"
+    login_user: "{{my_args.db_user}}"
+    login_password: "{{my_args.db_pass}}"
+    target: "{{my_args.src_file}}"
+    state: import
+  #debug: msg="{{my_args}}"

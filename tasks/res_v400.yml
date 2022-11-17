@@ -1,0 +1,14 @@
+---
+
+- debug: var=restore
+- name: Restore
+  when: restore.set.active==true
+  with_items: "{{ restore.set.restore_items | list }}"
+  vars:
+    args:
+      src_root: "{{restore.src}}{{restore.res_set}}"            #Root of backup dir
+      dst_root: "{{restore.set.dst_root}}"    #Root of destination dir
+      dst_sec: "{{restore.set.dst_sec}}"      #Security info
+      res_args: "{{item}}"
+  #debug: msg="{{args}}"
+  include_tasks: res_v400_{{item.type}}.yml

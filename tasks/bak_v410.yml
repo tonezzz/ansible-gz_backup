@@ -1,0 +1,64 @@
+---
+
+#- debug: var=opts_bak
+
+- name: Backup set
+  vars:
+    _set_name: "{{lookup('pipe', 'date +%Y-%m-%dT%H:%M:%S%z') | replace(':','') }}"
+  block:
+  - set_fact:
+      dst_path: "{{opts_bak.dst_root}}{{opts_bak.bak_prefix}}_{{opts_bak.name}}_{{opts_bak.set_name|default(_set_name) }}/"
+  - debug: var=dst_path
+  ####
+  - name: Save vars
+    vars:
+      opts_vars:
+        file_path: "{{opts_bak.download_path}}hostvars_{{inventory_hostname}}_{{ansible_date_time.iso8601 | replace(':','') }}.json"
+    include_role: name=gz_common tasks_from=save_vars
+  ####
+  - name: Create dir
+    when: opts_bak.do.backup|default(false)
+    #tags: "{{'' if opts_bak.do.backup|default(False) else 'never'}}"
+    file:
+      path: "{{dst_path}}"
+      state: directory
+      group: "{{opts_bak.dst_sec.group | default(omit)}}"
+      owner: "{{opts_bak.dst_sec.owner | default(omit)}}"
+      mode: "{{opts_bak.dst_sec.mode | default(omit)}}"
+  ####
+  - name: Backup
+    when: opts_bak.do.backup|default(false)
+    #tags: "{{'' if opts_bak.do.backup|default(False) else 'never'}}"
+    loop: "{{opts_bak.bak_items}}"
+    vars:                           #bak_dev01_nspwww_v300
+      opts_bak_item:
+        src_root: "{{opts_bak.src_root}}"
+        dst_root: "{{dst_path}}"
+        zip_args: "{{opts_bak.zip_args}}"
+        bak_args: "{{item}}"
+    include_tasks: bak_v410_{{item.type}}.yml       #import_tasks cannot be used with loops
+
+  - name: Download
+    when: opts_bak.do.download|default(false)
+    #tags: "{{'' if opts_bak.do.download|default(False) else 'never'}}"
+    vars:
+      opts_download:
+        mode: latest    #all, latest ,oldest
+        download_count: "{{opts_bak.download_count|default(1) }}"
+        use_sub_dirs: yes
+        src_path: "{{dst_path}}"
+        dst_path: "{{opts_bak.download_path}}"
+        patterns: "*"
+        file_type: any
+        backup: yes     #Keep the timestamp
+    include_role: name=gz_common tasks_from=download2
+    
+- name: Clean
+  when: opts_bak.do.clean|default(false)
+  #tags: "{{'' if opts_bak.do.clean|default(False) else 'never'}}"
+  vars:
+    opts_clean:
+      path: "{{opts_bak.dst_root}}"
+      patterns: "{{opts_bak.bak_prefix}}_{{opts_bak.name}}_*"
+      keep: "{{opts_bak.keep}}"
+  include_tasks: clean_v410.yml

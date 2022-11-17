@@ -1,0 +1,45 @@
+---
+
+#args:
+#  type: #db - Backup a database
+#  type: #dir - Backup a directory
+#  type: #sub - backup each sub directories into separate files
+
+#  dst_file: #No extension
+#  exc: _*/\* wp-content/\*
+#  zip_args: #-FS, -s 50m
+#- debug: msg="{{args}}"
+
+#####################
+# Restore sub folders
+- name: RES_SUB Prepare
+  when: args.res_args.type=='sub'
+  vars:
+    my_args:
+      src_dir: "{{args.src_root}}/"
+      dst_dir: "{{args.dst_root}}/{{args.res_args.path}}/"      #sub path is already included
+      options: "{{args.res_args.opts}}"
+      patterns: "{{args.res_args.name}}_*"
+      file_type: file
+      recurse: "{{args.res_args.recurse}}"
+      exc: "{%for item in args.res_args.exc%}{{args.res_args.name}}_{{item}}.zip,{%endfor%}" #Needs ',' behind each file.
+  block:
+    - find: paths="{{my_args.src_dir}}" patterns="{{my_args.patterns}}" file_type="{{my_args.file_type}}" recurse="{{my_args.recurse}}" excludes="{{my_args.exc}}"
+      register: rs
+    #- debug: msg=[{{rs}},{{my_args}}]
+  
+    - name: RES_SUB Restoring #res_dev01_nspwww bak_args
+      with_items: "{{ rs.files | map(attribute='path') | list }}"
+      loop_control: {loop_var: res_item}
+      vars:
+        src_file: "{{res_item}}"
+        exc_file: "{%for item in args.res_args.exc%} -x'!{{item}}'{%endfor%} "
+        cmd:
+          - cd {{my_args.dst_dir}}
+          - 7z x {{my_args.options}} {{src_file}} -o{{my_args.dst_dir}}
+      shell: "{{cmd | join(' ; ')}}"
+      #debug: msg={{cmd}}
+
+    - debug: msg="[{{args}},{{my_args}}]"
+    - name: Set permissions
+      file: dest="{{my_args.dst_dir}}" owner="{{args.dst_sec.owner}}" group="{{args.dst_sec.group}}" mode="{{args.dst_sec.mode}}" recurse=yes    

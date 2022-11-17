@@ -1,0 +1,41 @@
+---
+
+- debug: var=opts_res
+
+- name: Restore set
+  block:
+  ####
+  - name: Save vars
+    vars:
+      opts_vars:
+        file_path: "{{opts_res.local_backup_path}}hostvars_{{inventory_hostname}}_{{ansible_date_time.iso8601 | replace(':','') }}.json"
+    include_role: name=gz_common tasks_from=save_vars
+  ####
+  - name: Restore
+    loop: "{{opts_res.res_items}}"
+    #debug: var=item
+    #with_items: "{{ restore.set.restore_items | list }}"
+    #vars:
+    #  args:
+    #    src_root: "{{restore.src}}{{restore.res_set}}"            #Root of backup dir
+    #    dst_root: "{{restore.set.dst_root}}"    #Root of destination dir
+    #    dst_sec: "{{restore.set.dst_sec}}"      #Security info
+    #    res_args: "{{item}}"
+    #debug: msg="{{args}}"
+    #include_tasks: res_v400_{{item.type}}.yml
+    vars:                           #bak_dev01_nspwww_v300
+      opts_res_item:
+        src_path: "{{opts_res.local_backup_path}}{{opts_res.backup_prefix}}_{{opts_res.backup_name}}_{{opts_res.backup_set}}/"
+        src_name:           "{{item.name}}"
+        dst_path:           "{{opts_res.restore_path    | default(omit) }}"
+        sub_path:           "{{item.path                | default(omit) }}" #Restore path (relative to restore_path)
+        exclude:            "{{item.exc                 | default(omit) }}"
+        db_name:            "{{item.db_name             | default(omit) }}"
+        login_unix_socket:  "{{item.login_unix_socket   | default(omit) }}"
+        login_user:         "{{item.login_user          | default(omit) }}"
+        tmp_path:           "{{opts_res.tmp_path        | default(omit) }}"
+        upload:             "{{item.upload              | default(omit) }}"
+        backup_name:        "{{opts_res.backup_name     | default(omit) }}"
+        #zip_args: "{{opts_res.zip_args}}"
+        #bak_args: "{{item}}"
+    include_tasks: res_v410_{{item.type}}.yml       #import_tasks cannot be used with loops
