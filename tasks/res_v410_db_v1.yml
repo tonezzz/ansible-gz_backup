@@ -1,0 +1,40 @@
+---
+
+- debug: var=opts_res_item
+- meta: end_play
+
+- name: RES_DIR with 7-Zip
+  vars:
+    file_name: "{{opts_res_item.src_name}}.gz"
+    src_file: "{{opts_res_item.src_path}}{{file_name}}"
+    dst_db: "{{opts_res_item.db_name}}"
+    tmp_path: "{{opts_res_item.tmp_path}}"
+  block:
+  ####
+  - name: Upload {{opts_res_item.tmp_path}} < {{opts_res_item.src_path}}{{opts_res_item.src_name}}.zip
+    when: opts_res_item.upload
+    copy:
+      src:  "{{src_file}}"
+      dest: "{{tmp_path}}"
+  ####
+  - name: RES_DB
+    mysql_db:
+      name: "{{dst_db}}"
+      state: import
+      target:             "{{src_file}}"
+      login_user:         "{{opts_res_item.login_user          | default(omit) }}"
+      login_unix_socket:  "{{opts_res_item.login_unix_socket   | default(omit) }}"
+      ignore_tables:
+      - wp_cli_cookie_scan
+      - wp_cli_cookie_scan_cookies
+      - wp_cli_cookie_scan_categories
+
+#- name: Import "{{opts_res_item.db_name}} < {{opts_res_item.src_path}}{{opts_res_item.src_name}}.gz"
+#  tags: never
+#  vars:
+#    db_name: "{{opts_res_item.db_name}}"
+#    db_file: "{{opts_res_item.src_path}}{{opts_res_item.src_name}}.gz"
+#    cmd: >
+#      mysql --binary-mode=1 {{db_name}} < {{db_file}}
+#  shell: "{{cmd}}"
+  #    mysql --binary-mode=1 -u{{my_args.db_user}} -p{{my_args.db_pass}} {{my_args.db_name}} < {{my_args.src_file}}
