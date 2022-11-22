@@ -1,6 +1,6 @@
 ---
 
-- debug: var=opts_res_item
+- debug: var=opts_res_item.clear_db
 - meta: end_play
 
 - name: RES_DIR with 7-Zip

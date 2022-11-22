@@ -26,7 +26,7 @@
         tmp_path:           "{{opts_res.tmp_path        | default(omit) }}"
         upload:             "{{item.upload              | default(omit) }}"
         backup_name:        "{{opts_res.backup_name     | default(omit) }}"
-        clear:              "{{opts_res.clear           | default(omit) }}"
+        clear_db:           "{{opts_res.clear           | default(omit) }}"
         #zip_args: "{{opts_res.zip_args}}"
         #bak_args: "{{item}}"
     include_tasks: res_v410_{{item.type}}.yml       #import_tasks cannot be used with loops
