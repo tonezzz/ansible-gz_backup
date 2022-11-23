@@ -16,11 +16,11 @@
       dest: "{{tmp_path}}"
   ####
   - name: Clear DB
-    when: opts_res_item.clear_db
+    when: opts_res_item.drop_tables
     vars:
       clear_db_opts:
         login_db: "{{dst_db}}"
-    include_tasks: clear_db.yml
+    include_tasks: db_drop_tables.yml
   ####
   - name: Import DB (mysql_db)
   #- name: Import (mysql_db): {{opts_res_item.db_name}} < {{opts_res_item.src_path}}{{opts_res_item.src_name}}.gz

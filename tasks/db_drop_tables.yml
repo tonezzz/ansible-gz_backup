@@ -8,3 +8,8 @@
       query: "SELECT table_name FROM information_schema.tables WHERE table_schema = '{{clear_db_opts.login_db}}'"
     register: output
   - debug: var=output
+  - name: Gen SQL
+    vars:
+      qry: "[].table_name.join('' ,['-',@,'-'])"
+      sql: "{{ output.query_result[0]|to_json|from_json|json_query( qry ) }}"
+    debug: var=sql
