@@ -1,0 +1,10 @@
+---
+
+- name: Clear DB
+  block:
+  - name: List tables
+    community.mysql.mysql_query:
+      login_db: "{{clear_db_opts.login_db}}"
+      query: "SELECT table_name FROM information_schema.tables WHERE table_schema = '{{clear_db_opts.login_db}}'"
+    register: output
+  - debug: var=output

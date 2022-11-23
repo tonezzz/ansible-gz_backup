@@ -1,8 +1,6 @@
 ---
 
-- debug: var=opts_res_item.clear_db
-- meta: end_play
-
+########
 - name: RES_DIR with 7-Zip
   vars:
     file_name: "{{opts_res_item.src_name}}.gz"
@@ -12,12 +10,21 @@
   block:
   ####
   - name: Upload {{opts_res_item.tmp_path}} < {{opts_res_item.src_path}}{{opts_res_item.src_name}}.zip
-    when: opts_res_item.upload
+    when: false and opts_res_item.upload
     copy:
       src:  "{{src_file}}"
       dest: "{{tmp_path}}"
   ####
-  - name: RES_DB
+  - name: Clear DB
+    when: opts_res_item.clear_db
+    vars:
+      clear_db_opts:
+        login_db: "{{dst_db}}"
+    include_tasks: clear_db.yml
+  ####
+  - name: Import DB (mysql_db)
+  #- name: Import (mysql_db): {{opts_res_item.db_name}} < {{opts_res_item.src_path}}{{opts_res_item.src_name}}.gz
+    when: false
     mysql_db:
       name: "{{dst_db}}"
       state: import
@@ -29,7 +36,7 @@
       - wp_cli_cookie_scan_cookies
       - wp_cli_cookie_scan_categories
 
-#- name: Import "{{opts_res_item.db_name}} < {{opts_res_item.src_path}}{{opts_res_item.src_name}}.gz"
+#- name: Import (mysql): {{opts_res_item.db_name}} < {{opts_res_item.src_path}}{{opts_res_item.src_name}}.gz
 #  tags: never
 #  vars:
 #    db_name: "{{opts_res_item.db_name}}"
