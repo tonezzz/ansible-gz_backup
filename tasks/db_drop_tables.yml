@@ -2,24 +2,25 @@
 
 - name: Clear DB
   block:
+  - name: Drop foreign keys constrains
+    community.mysql.mysql_query:
+        query: SELECT TABLE_NAME,CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_TYPE='FOREIGN KEY'
+        login_db: "{{clear_db_opts.db_name}}"
+        login_user:         "{{clear_db_opts.login_user           | default(omit) }}"
+        login_unix_socket:  "{{clear_db_opts.login_unix_socket    | default(omit) }}"
+        login_password:     "{{clear_db_opts.login_password       | default(omit) }}"
+    register: output
+  - debug: var=output
+  - meta: end_play
+
   - name: List tables
     community.mysql.mysql_query:
       login_db: "{{clear_db_opts.db_name}}"
       query: "SELECT table_name FROM information_schema.tables WHERE table_schema = '{{clear_db_opts.db_name}}'"
     register: output
   - debug: var=output
-  - name: Drop foreign keys constrains
-    vars:
-      qry: SELECT TABLE_NAME,CONSTRAINT_NAME FROM TABLE_CONSTRAINTS WHERE CONSTRAINT_TYPE='FOREIGN KEY'
-    community.mysql.mysql_query:
-        query: "{{sql_fk}}"
-        login_db: "{{clear_db_opts.db_name}}"
-        login_user:         "{{clear_db_opts.login_user           | default(omit) }}"
-        login_unix_socket:  "{{clear_db_opts.login_unix_socket    | default(omit) }}"
-        login_password:     "{{clear_db_opts.login_password       | default(omit) }}"
-    register: output
-    debug: var=output
   - meta: end_play
+  
   - name: Drop all tables in DB:{{clear_db_opts.db_name}}
     vars:
       #qry: "[].table_name.join('' ,['DROP TABLE `',@,'`;'])"
