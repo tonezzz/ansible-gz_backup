@@ -2,63 +2,37 @@
 
 - name: Clear DB
   block:
-  - name: Drop foreign keys constrains
+  - name: Get foreign keys constrain list
     community.mysql.mysql_query:
-        query: SELECT TABLE_NAME,CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_TYPE='FOREIGN KEY'
+        #query: SELECT TABLE_NAME,CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_TYPE='FOREIGN KEY'
+        query: >
+          SELECT TABLE_NAME,CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS
+          WHERE TABLE_SCHEMA='{{clear_db_opts.db_name}}' AND CONSTRAINT_TYPE='FOREIGN KEY'
         login_db: "{{clear_db_opts.db_name}}"
         login_user:         "{{clear_db_opts.login_user           | default(omit) }}"
         login_unix_socket:  "{{clear_db_opts.login_unix_socket    | default(omit) }}"
         login_password:     "{{clear_db_opts.login_password       | default(omit) }}"
-    register: output
-  - debug: var=output
-  - meta: end_play
+    register: out_drop_fk
+  - debug: var=out_drop_fk
 
-  - name: List tables
+  - name: Get table list
     community.mysql.mysql_query:
       login_db: "{{clear_db_opts.db_name}}"
       query: "SELECT table_name FROM information_schema.tables WHERE table_schema = '{{clear_db_opts.db_name}}'"
+    register: out_table_list
+
+  - name: Gen sql_drop_table DB={{clear_db_opts.db_name}}
+    vars:
+      qry_drop_fk: "[].join('' ,['ALTER TABLE `',@.TABLE_NAME,'` DROP FOREIGN KEY `',@.CONSTRAINT_NAME,'`'])"
+      sql_drop_fk: "{{ out_drop_fk.query_result[0]|to_json|from_json|json_query( qry_drop_fk ) | join('; ') }};"
+      qry_drop_table: "[].table_name.join('' ,['`',@,'`'])"
+      sql_drop_table: "DROP TABLE {{ out_table_list.query_result[0]|to_json|from_json|json_query( qry_drop_table ) | join(', ') }};"
+    community.mysql.mysql_query:
+      query:    "{{ ( (sql_drop_fk + sql_drop_table)|regex_replace(';$','') ).split(';') }}"
+      login_db: "{{clear_db_opts.db_name}}"
+      login_user:         "{{clear_db_opts.login_user           | default(omit) }}"
+      login_unix_socket:  "{{clear_db_opts.login_unix_socket    | default(omit) }}"
+      login_password:     "{{clear_db_opts.login_password       | default(omit) }}"
+    #debug: var=query
     register: output
   - debug: var=output
-  - meta: end_play
-  
-  - name: Drop all tables in DB:{{clear_db_opts.db_name}}
-    vars:
-      #qry: "[].table_name.join('' ,['DROP TABLE `',@,'`;'])"
-      #sql: "START TRANSACTION; {{ output.query_result[0]|to_json|from_json|json_query( qry ) | join(' ') }}; COMMIT;"
-      qry_drop: "[].table_name.join('' ,['`',@,'`'])"
-      sql_drop: "DROP TABLE {{ output.query_result[0]|to_json|from_json|json_query( qry_drop ) | join(', ') }};"
-      qry_fk0: >
-        [].table_name.join('',['
-        SET @table_name = \'',@,'\';
-        SET @sql="SELECT IF(
-        (SELECT true FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE()
-        AND TABLE_NAME=@table_name AND CONSTRAINT_NAME=\'fk_name\' AND CONSTRAINT_TYPE=\'FOREIGN KEY\') = true
-        ,\'ALTER TABLE @table_name drop foreign key fk_name\'
-        ,\'SELECT 1\'
-        )";
-        PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;'])
-      qry_fk: >
-        [].table_name.join('',['
-        SET @table_name = \'',@,'\';
-        SET @sql="SELECT IF(
-        (SELECT true FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE()
-        AND TABLE_NAME=@table_name AND CONSTRAINT_NAME=\'fk_name\' AND CONSTRAINT_TYPE=\'FOREIGN KEY\') = true
-        ,\'ALTER TABLE @table_name drop foreign key fk_name\'
-        ,\'SELECT 1\'
-        )";
-        PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;'])
-      sql_fk0: "{{ output.query_result[0]|to_json|from_json|json_query( qry_fk ) | join(' ') }}"
-      sql_fk1: "{{ (sql_fk0+sql_drop)|regex_replace(';$','') }}"
-      sql_fk: "{{ sql_fk1.split(';') }}"
-      #sql_truncate: "TRUNCATE TABLE {{ output.query_result[0]|to_json|from_json|json_query( qry ) | join(', ') }};"
-    block:
-    - debug: var=qry_fk
-    - debug: var=sql_fk
-    - community.mysql.mysql_query:
-        query: "{{sql_fk}}"
-        login_db: "{{clear_db_opts.db_name}}"
-        login_user:         "{{clear_db_opts.login_user           | default(omit) }}"
-        login_unix_socket:  "{{clear_db_opts.login_unix_socket    | default(omit) }}"
-        login_password:     "{{clear_db_opts.login_password       | default(omit) }}"
-      register: output
-    - debug: var=output

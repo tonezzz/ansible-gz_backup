@@ -25,19 +25,15 @@
         login_password:     "{{opts_res_item.db_pass           | default(omit) }}"
     include_tasks: db_drop_tables.yml
   ####
-  - name: Import DB (mysql_db)
-  #- name: Import (mysql_db): {{opts_res_item.db_name}} < {{opts_res_item.src_path}}{{opts_res_item.src_name}}.gz
-    when: false
+  #- name: Import DB (mysql_db)
+  - name: "Import (mysql_db): {{opts_res_item.db_name}} < {{opts_res_item.src_path}}{{opts_res_item.src_name}}.gz"
+    #when: false
     mysql_db:
       name: "{{dst_db}}"
       state: import
       target:             "{{src_file}}"
       login_user:         "{{opts_res_item.login_user          | default(omit) }}"
       login_unix_socket:  "{{opts_res_item.login_unix_socket   | default(omit) }}"
-      ignore_tables:
-      - wp_cli_cookie_scan
-      - wp_cli_cookie_scan_cookies
-      - wp_cli_cookie_scan_categories
 
 #- name: Import (mysql): {{opts_res_item.db_name}} < {{opts_res_item.src_path}}{{opts_res_item.src_name}}.gz
 #  tags: never
