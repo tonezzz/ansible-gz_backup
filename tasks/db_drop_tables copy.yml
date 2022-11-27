@@ -8,18 +8,6 @@
       query: "SELECT table_name FROM information_schema.tables WHERE table_schema = '{{clear_db_opts.db_name}}'"
     register: output
   - debug: var=output
-  - name: Drop foreign keys constrains
-    vars:
-      qry: SELECT TABLE_NAME,CONSTRAINT_NAME FROM TABLE_CONSTRAINTS WHERE CONSTRAINT_TYPE='FOREIGN KEY'
-    community.mysql.mysql_query:
-        query: "{{sql_fk}}"
-        login_db: "{{clear_db_opts.db_name}}"
-        login_user:         "{{clear_db_opts.login_user           | default(omit) }}"
-        login_unix_socket:  "{{clear_db_opts.login_unix_socket    | default(omit) }}"
-        login_password:     "{{clear_db_opts.login_password       | default(omit) }}"
-    register: output
-    debug: var=output
-  - meta: end_play
   - name: Drop all tables in DB:{{clear_db_opts.db_name}}
     vars:
       #qry: "[].table_name.join('' ,['DROP TABLE `',@,'`;'])"
@@ -47,7 +35,8 @@
         )";
         PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;'])
       sql_fk0: "{{ output.query_result[0]|to_json|from_json|json_query( qry_fk ) | join(' ') }}"
-      sql_fk1: "{{ (sql_fk0+sql_drop)|regex_replace(';$','') }}"
+      #sql_fk1: "{{ (sql_fk0+sql_drop)|regex_replace(';$','') }}"
+      sql_fk1: "{{ (sql_fk0)|regex_replace(';$','') }}"
       sql_fk: "{{ sql_fk1.split(';') }}"
       #sql_truncate: "TRUNCATE TABLE {{ output.query_result[0]|to_json|from_json|json_query( qry ) | join(', ') }};"
     block:
