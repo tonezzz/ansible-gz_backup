@@ -11,7 +11,7 @@
     tmp_path: "{{opts_res_item.tmp_path}}"
   block:
   ####
-  - name: Upload {{opts_res_item.tmp_path}} < {{opts_res_item.src_path}}{{opts_res_item.src_name}}.zip
+  - name: Upload Local:{{opts_res_item.src_path}}{{opts_res_item.src_name}}.zip > host:{{opts_res_item.tmp_path}}
     when: opts_res_item.upload
     copy:
       src:  "{{src_file}}"
@@ -24,7 +24,7 @@
         exclude: "{%for item in opts_res_item.exclude%} -x'!{{item}}'{%endfor%} "
         options: ''
         cmd: >
-          7z x {{opts_res_item.zip_opts|default('')}} {{tmp_path}}{{file_name}} -o{{opts_res_item.dst_path}}{{opts_res_item.sub_path}} {{exclude}}
+          7z x -y {{opts_res_item.zip_opts|default('')}} {{tmp_path}}{{file_name}} -o{{opts_res_item.dst_path}}{{opts_res_item.sub_path}} {{exclude}}
       shell: "{{cmd}}"
     #- name: Set permissions
     #  file: dest="{{my_args.dst_dir}}" owner="{{args.dst_sec.owner}}" group="{{args.dst_sec.group}}" mode="{{args.dst_sec.mode}}" recurse=yes
