@@ -1,0 +1,7 @@
+---
+
+- name: rmdir {{opts_res_item.dst_path}}{{opts_res_item.sub_path}}
+  #file:
+  #  path: "{{opts_res_item.dst_path}}{{opts_res_item.sub_path}}"
+  #  state: absent
+  shell: "rm -rf {{opts_res_item.dst_path}}{{opts_res_item.sub_path}}"
