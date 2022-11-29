@@ -16,7 +16,7 @@
     vars:                           #bak_dev01_nspwww_v300
       opts_res_item:
         src_path: "{{opts_res.local_backup_path}}{{opts_res.backup_prefix}}_{{opts_res.backup_name}}_{{opts_res.backup_set}}/"
-        src_name:           "{{item.name}}"
+        src_name:           "{{item.name                | default(omit) }}"
         dst_path:           "{{opts_res.restore_path    | default(omit) }}"
         sub_path:           "{{item.path                | default(omit) }}" #Restore path (relative to restore_path)
         exclude:            "{{item.exc                 | default(omit) }}"
