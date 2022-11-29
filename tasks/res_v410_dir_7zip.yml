@@ -19,7 +19,7 @@
   ####
   - name: Unzip {{opts_res_item.tmp_path}}{{opts_res_item.src_name}}.zip
     block:
-    - name: Extract files
+    - name: Extract files (Check /etc/fstab if cannot create dir).
       vars:
         exclude: "{%for item in opts_res_item.exclude%} -x'!{{item}}'{%endfor%} "
         options: ''
